@@ -4,10 +4,10 @@ const INITIAL_RETRY_DELAY = 1000;
 
 // Available models for different tasks
 export const MODELS = {
-    COMPETITOR_ANALYSIS: 'microsoft/phi-3-medium-128k-instruct:free', // Free model for competitor analysis
-    SEMANTIC_ENHANCEMENT: 'anthropic/claude-3-sonnet-20240229', // Claude Sonnet for semantic enhancement
-    CONTENT_GENERATION: 'microsoft/phi-3-medium-128k-instruct:free', // Free model for content generation
-    OUTLINE_OPTIMIZATION: 'anthropic/claude-3-sonnet-20240229' // Claude Sonnet for outline optimization
+    COMPETITOR_ANALYSIS: 'openai/gpt-4o-mini', // GPT-4o Mini for competitor analysis
+    SEMANTIC_ENHANCEMENT: 'openai/gpt-4o-mini', // GPT-4o Mini for semantic enhancement
+    CONTENT_GENERATION: 'openai/gpt-4o-mini', // GPT-4o Mini for content generation
+    OUTLINE_OPTIMIZATION: 'openai/gpt-4o-mini' // GPT-4o Mini for outline optimization
 };
 
 export async function makeOpenRouterRequest(apiKey, model, messages, maxTokens = 1000) {
