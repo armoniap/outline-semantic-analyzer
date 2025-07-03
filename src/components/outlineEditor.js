@@ -24,6 +24,10 @@ export function setupOutlineEditor(analysisResults, semanticTerms, keyword) {
     
     renderOutlineEditor();
     setupEditorEventListeners();
+    
+    // Initial update of term usage colors
+    const currentOutlineText = getCurrentOutlineText();
+    updateTermUsageColors(currentOutlineText);
 }
 
 function renderOutlineEditor() {
@@ -122,6 +126,8 @@ function setupEditorEventListeners() {
     if (editableOutline) {
         editableOutline.addEventListener('click', handleOutlineClick);
         editableOutline.addEventListener('input', handleOutlineInput);
+        editableOutline.addEventListener('keydown', handleOutlineKeydown);
+        editableOutline.addEventListener('blur', handleOutlineBlur, true);
     }
 }
 
@@ -146,32 +152,79 @@ function handleOutlineClick(event) {
     }
 }
 
+// Debounce function for input handling
+let inputTimeout = null;
+
 async function handleOutlineInput(event) {
     const target = event.target;
     
     if (target.tagName === 'INPUT') {
         const itemElement = target.closest('.outline-item');
         if (itemElement) {
-            await updateOutlineItem(itemElement, target.value);
+            // Clear existing timeout
+            if (inputTimeout) {
+                clearTimeout(inputTimeout);
+            }
+            
+            // Set new timeout for debounced update
+            inputTimeout = setTimeout(async () => {
+                await updateOutlineItem(itemElement, target.value);
+            }, 1500); // Wait 1.5 seconds after user stops typing
         }
     }
 }
+
+async function handleOutlineKeydown(event) {
+    if (event.key === 'Enter' && event.target.tagName === 'INPUT') {
+        event.preventDefault();
+        const itemElement = event.target.closest('.outline-item');
+        if (itemElement) {
+            // Clear timeout and trigger immediate update
+            if (inputTimeout) {
+                clearTimeout(inputTimeout);
+                inputTimeout = null;
+            }
+            await updateOutlineItem(itemElement, event.target.value);
+        }
+    }
+}
+
+async function handleOutlineBlur(event) {
+    if (event.target.tagName === 'INPUT') {
+        const itemElement = event.target.closest('.outline-item');
+        if (itemElement) {
+            // Clear timeout and trigger immediate update
+            if (inputTimeout) {
+                clearTimeout(inputTimeout);
+                inputTimeout = null;
+            }
+            await updateOutlineItem(itemElement, event.target.value);
+        }
+    }
+}
+
+// Track items currently being updated to prevent multiple simultaneous updates
+const updatingItems = new Set();
 
 async function updateOutlineItem(itemElement, newText) {
     const itemId = itemElement.dataset.id;
     const item = currentOutlineItems.find(i => i.id === itemId);
     
-    if (!item || item.text === newText) return;
+    if (!item || item.text === newText || !newText.trim()) return;
+    
+    // Prevent multiple simultaneous updates of the same item
+    if (updatingItems.has(itemId)) return;
+    updatingItems.add(itemId);
     
     const oldScore = item.score;
-    item.text = newText;
+    item.text = newText.trim();
     item.isModified = true;
     
     try {
         // Recalculate score for the updated heading
-        if (currentAnalyzer) {
+        if (currentAnalyzer && currentKeyword) {
             showLoading('Ricalcolo punteggio...');
-            const newScoreData = await currentAnalyzer.recalculateHeadingScore(currentKeyword, newText);
+            const newScoreData = await currentAnalyzer.recalculateHeadingScore(currentKeyword, item.text);
             
             item.score = newScoreData.score;
             item.scoreLevel = newScoreData.level;
@@ -191,6 +244,8 @@ async function updateOutlineItem(itemElement, newText) {
     } catch (error) {
         hideLoading();
         showError(`Errore nel ricalcolo del punteggio: ${error.message}`);
+    } finally {
+        updatingItems.delete(itemId);
     }
 }
 
@@ -239,6 +294,10 @@ function addNewSubheading() {
             input.focus();
             input.select();
         }
+        
+        // Update term usage colors
+        const currentOutlineText = getCurrentOutlineText();
+        updateTermUsageColors(currentOutlineText);
     }
 }
 
@@ -251,6 +310,10 @@ function deleteOutlineItem(itemElement) {
         
         // Remove from DOM
         itemElement.remove();
+        
+        // Update term usage colors
+        const currentOutlineText = getCurrentOutlineText();
+        updateTermUsageColors(currentOutlineText);
         
         showSuccess('Titolo eliminato');
     }
@@ -276,12 +339,39 @@ async function saveCurrentOutline() {
         
         saveOutline(outlineData);
         
+        // Copy to clipboard
+        const outlineText = currentOutlineItems.map(item => `${item.level}: ${item.text}`).join('\n');
+        await copyToClipboard(outlineText);
+        
         hideLoading();
-        showSuccess('Outline salvata con successo!');
+        showSuccess('Outline salvata e copiata negli appunti!');
         
     } catch (error) {
         hideLoading();
         showError(`Errore nel salvataggio: ${error.message}`);
+    }
+}
+
+async function copyToClipboard(text) {
+    try {
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(text);
+        } else {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            document.execCommand('copy');
+            textArea.remove();
+        }
+    } catch (error) {
+        console.warn('Could not copy to clipboard:', error);
+        throw new Error('Impossibile copiare negli appunti');
     }
 }
 
@@ -502,6 +592,10 @@ function applyNewCompleteOutline(outlineText) {
         
         // Re-render the editor
         renderOutlineEditor();
+        
+        // Update term usage colors
+        const currentOutlineText = getCurrentOutlineText();
+        updateTermUsageColors(currentOutlineText);
         
         showSuccess('Outline ottimizzata applicata con successo!');
         

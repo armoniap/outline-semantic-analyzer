@@ -26,19 +26,23 @@
   }
   
   .score-excellent {
-    @apply text-semantic-excellent font-bold;
+    color: #10b981 !important;
+    font-weight: bold;
   }
   
   .score-good {
-    @apply text-semantic-good font-bold;
+    color: #3b82f6 !important;
+    font-weight: bold;
   }
   
   .score-fair {
-    @apply text-semantic-fair font-bold;
+    color: #f59e0b !important;
+    font-weight: bold;
   }
   
   .score-poor {
-    @apply text-semantic-poor font-bold;
+    color: #ef4444 !important;
+    font-weight: bold;
   }
   
   .outline-item {

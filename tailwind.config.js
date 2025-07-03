@@ -22,7 +22,7 @@ export default {
         },
         semantic: {
           excellent: '#10b981',
-          good: '#3b82f6',
+          good: '#3b82f6', 
           fair: '#f59e0b',
           poor: '#ef4444',
         }
