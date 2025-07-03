@@ -7,7 +7,8 @@ export const MODELS = {
     COMPETITOR_ANALYSIS: 'openai/gpt-4o-mini', // GPT-4o Mini for competitor analysis
     SEMANTIC_ENHANCEMENT: 'openai/gpt-4o-mini', // GPT-4o Mini for semantic enhancement
     CONTENT_GENERATION: 'openai/gpt-4o-mini', // GPT-4o Mini for content generation
-    OUTLINE_OPTIMIZATION: 'openai/gpt-4o-mini' // GPT-4o Mini for outline optimization
+    OUTLINE_OPTIMIZATION: 'openai/gpt-4o-mini', // GPT-4o Mini for outline optimization
+    AI_SUGGESTIONS: 'anthropic/claude-3.5-sonnet-20241022' // Claude Sonnet 4 for AI suggestions
 };
 
 export async function makeOpenRouterRequest(apiKey, model, messages, maxTokens = 1000) {
@@ -252,6 +253,148 @@ async function makeRequestWithRetry(url, options, retryCount = 0) {
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+export async function generateSubheadingSuggestion(apiKey, keyword, currentTitle, level, currentOutline) {
+    const messages = [
+        {
+            role: 'system',
+            content: `Sei un esperto SEO e content strategist specializzato nella creazione di titoli semanticamente ottimizzati. Il tuo compito è migliorare un singolo subheading per massimizzare la rilevanza semantica e l'efficacia SEO.`
+        },
+        {
+            role: 'user',
+            content: `Migliora questo subheading per la parola chiave "${keyword}":
+
+SUBHEADING DA MIGLIORARE:
+Livello: ${level}
+Titolo attuale: "${currentTitle}"
+
+CONTESTO OUTLINE COMPLETA:
+${currentOutline}
+
+Il nuovo subheading deve:
+1. Essere semanticamente più rilevante alla parola chiave principale
+2. Essere più accattivante e coinvolgente
+3. Mantenere il livello gerarchico ${level}
+4. Integrarsi bene con il resto dell'outline
+5. Essere specifico e dettagliato nel descrivere il contenuto
+6. Evitare argomenti già coperti da altri subheading
+
+Rispondi SOLO con il nuovo titolo ottimizzato, senza spiegazioni aggiuntive.`
+        }
+    ];
+
+    try {
+        const response = await makeOpenRouterRequest(apiKey, MODELS.AI_SUGGESTIONS, messages, 100);
+        return response.choices[0].message.content.trim();
+    } catch (error) {
+        console.error('Error generating subheading suggestion:', error);
+        throw error;
+    }
+}
+
+export async function generateOptimizedOutline(apiKey, keyword, currentOutline, semanticTerms) {
+    const messages = [
+        {
+            role: 'system',
+            content: `Sei un esperto SEO e content strategist. Il tuo compito è riscrivere completamente un'outline per massimizzare la coerenza semantica e l'efficacia SEO.`
+        },
+        {
+            role: 'user',
+            content: `Riscrivi completamente questa outline per la parola chiave "${keyword}":
+
+OUTLINE ATTUALE:
+${currentOutline}
+
+TERMINI SEMANTICI DISPONIBILI:
+${semanticTerms.map(term => `- ${term.term} (${term.type}, ${term.relevance})`).join('\n')}
+
+La nuova outline deve:
+1. Essere completamente riscritta e ottimizzata
+2. Integrare i termini semantici più rilevanti
+3. Avere una struttura logica e progressiva
+4. Coprire tutti gli aspetti importanti del topic
+5. Evitare ripetizioni e sovrapposizioni
+6. Essere specifici e dettagliati nei subheading
+7. Mantenere la gerarchia H1, H2, H3
+
+Rispondi in formato:
+H1: Titolo principale
+H2: Primo sottotitolo
+H3: Primo sotto-sottotitolo
+H3: Secondo sotto-sottotitolo
+H2: Secondo sottotitolo
+... e così via`
+        }
+    ];
+
+    try {
+        const response = await makeOpenRouterRequest(apiKey, MODELS.AI_SUGGESTIONS, messages, 1000);
+        return response.choices[0].message.content.trim();
+    } catch (error) {
+        console.error('Error generating optimized outline:', error);
+        throw error;
+    }
+}
+
+export async function generateSmartSubheadingSuggestions(apiKey, keyword, currentOutline, semanticTerms, maxSuggestions = 5) {
+    const messages = [
+        {
+            role: 'system',
+            content: `Sei un esperto SEO e content strategist. Il tuo compito è analizzare un'outline esistente e suggerire nuovi subheading che colmino le lacune tematiche.`
+        },
+        {
+            role: 'user',
+            content: `Analizza questa outline per la parola chiave "${keyword}" e suggerisci ${maxSuggestions} nuovi subheading:
+
+OUTLINE ATTUALE:
+${currentOutline}
+
+TERMINI SEMANTICI DISPONIBILI:
+${semanticTerms.map(term => `- ${term.term} (${term.type}, ${term.relevance})`).join('\n')}
+
+Suggerisci nuovi subheading che:
+1. NON si sovrappongano con quelli esistenti
+2. Coprano aspetti mancanti del topic
+3. Siano semanticamente rilevanti
+4. Integrino i termini semantici disponibili
+5. Aggiungano valore unico all'outline
+6. Siano specifici e descrittivi del contenuto
+
+Per ogni suggerimento, includi:
+- Il livello appropriato (H2 o H3)
+- Il titolo del subheading
+- Una breve spiegazione del contenuto che dovrebbe coprire
+
+Rispondi in formato JSON:
+{
+    "suggestions": [
+        {
+            "level": "H2",
+            "title": "Titolo suggerito",
+            "description": "Descrizione del contenuto che dovrebbe coprire questo paragrafo",
+            "semanticTerms": ["termine1", "termine2"]
+        }
+    ]
+}`
+        }
+    ];
+
+    try {
+        const response = await makeOpenRouterRequest(apiKey, MODELS.AI_SUGGESTIONS, messages, 1500);
+        const content = response.choices[0].message.content;
+        
+        // Parse JSON response
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            return JSON.parse(jsonMatch[0]);
+        }
+        
+        throw new Error('Invalid response format');
+    } catch (error) {
+        console.error('Error generating smart subheading suggestions:', error);
+        throw error;
+    }
 }
 
 export async function testOpenRouterApiKey(apiKey) {

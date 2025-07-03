@@ -38,6 +38,10 @@ function renderSemanticTerms(semanticTerms) {
     
     semanticTermsContent.innerHTML = '';
     
+    // Add legend
+    const legend = createTermsLegend();
+    semanticTermsContent.appendChild(legend);
+    
     // Group terms by type
     const termsByType = {};
     semanticTerms.forEach(term => {
@@ -61,7 +65,7 @@ function renderSemanticTerms(semanticTerms) {
         
         termsByType[type].forEach(term => {
             const termElement = document.createElement('span');
-            termElement.className = `semantic-term ${getRelevanceClass(term.relevance)}`;
+            termElement.className = `semantic-term unused`;
             termElement.textContent = term.term;
             termElement.dataset.term = term.term;
             termElement.dataset.type = term.type;
@@ -180,17 +184,58 @@ function getLevelLabel(level) {
     return labels[level] || level;
 }
 
+function createTermsLegend() {
+    const legend = document.createElement('div');
+    legend.className = 'terms-legend';
+    
+    const legendTitle = document.createElement('h4');
+    legendTitle.className = 'text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3';
+    legendTitle.textContent = 'Legenda Colori Termini';
+    
+    const legendItems = [
+        { class: 'unused', label: 'Non utilizzato', color: 'bg-gray-100 dark:bg-gray-700' },
+        { class: 'selected', label: 'Selezionato', color: 'bg-blue-100 dark:bg-blue-900' },
+        { class: 'used', label: 'Utilizzato nell\'outline', color: 'bg-green-100 dark:bg-green-900' },
+        { class: 'excluded', label: 'Escluso', color: 'bg-red-100 dark:bg-red-900' }
+    ];
+    
+    legend.appendChild(legendTitle);
+    
+    legendItems.forEach(item => {
+        const legendItem = document.createElement('div');
+        legendItem.className = 'legend-item';
+        
+        const colorBox = document.createElement('div');
+        colorBox.className = `legend-color ${item.color}`;
+        
+        const label = document.createElement('span');
+        label.className = 'text-xs text-gray-600 dark:text-gray-400';
+        label.textContent = item.label;
+        
+        legendItem.appendChild(colorBox);
+        legendItem.appendChild(label);
+        legend.appendChild(legendItem);
+    });
+    
+    return legend;
+}
+
 function toggleTermSelection(termElement) {
     if (termElement.classList.contains('excluded')) {
         // Remove from excluded
         termElement.classList.remove('excluded');
-        termElement.classList.remove('semantic-term.excluded');
+        termElement.classList.add('unused');
     } else if (termElement.classList.contains('selected')) {
         // Mark as excluded
         termElement.classList.remove('selected');
         termElement.classList.add('excluded');
+    } else if (termElement.classList.contains('used')) {
+        // Mark as excluded
+        termElement.classList.remove('used');
+        termElement.classList.add('excluded');
     } else {
         // Mark as selected
+        termElement.classList.remove('unused');
         termElement.classList.add('selected');
     }
 }
@@ -234,12 +279,12 @@ export function updateScoreDisplay(newScore, oldScore) {
     // Show difference notification
     if (difference !== 0) {
         const sign = difference > 0 ? '+' : '';
-        const message = `Punteggio ${sign}${difference}%`;
+        const message = `${sign}${difference}%`;
         
         // Create temporary indicator
         const indicator = document.createElement('div');
-        indicator.className = `inline-block ml-2 px-2 py-1 rounded-full text-xs font-medium ${
-            difference > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+        indicator.className = `score-change-indicator ${
+            difference > 0 ? 'score-change-positive' : 'score-change-negative'
         }`;
         indicator.textContent = message;
         
@@ -252,4 +297,19 @@ export function updateScoreDisplay(newScore, oldScore) {
             }
         }, 3000);
     }
+}
+
+export function updateTermUsageColors(outlineText) {
+    const allTerms = document.querySelectorAll('.semantic-term');
+    
+    allTerms.forEach(termElement => {
+        const termText = termElement.dataset.term.toLowerCase();
+        const isUsed = outlineText.toLowerCase().includes(termText);
+        
+        // Don't change if already selected or excluded
+        if (!termElement.classList.contains('selected') && !termElement.classList.contains('excluded')) {
+            termElement.classList.remove('unused', 'used');
+            termElement.classList.add(isUsed ? 'used' : 'unused');
+        }
+    });
 }
