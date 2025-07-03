@@ -83,6 +83,11 @@ function createOutlineItemElement(item) {
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
                     </svg>
                 </button>
+                <button class="p-1 hover:bg-green-200 dark:hover:bg-green-600 rounded confirm-edit-btn hidden" title="Conferma modifica e ricalcola">
+                    <svg class="w-4 h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </button>
                 <button class="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded edit-btn" title="Modifica">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
@@ -139,6 +144,11 @@ function handleOutlineClick(event) {
         if (itemElement) {
             suggestWithAI(itemElement);
         }
+    } else if (target.classList.contains('confirm-edit-btn') || target.closest('.confirm-edit-btn')) {
+        const itemElement = target.closest('.outline-item');
+        if (itemElement) {
+            confirmEdit(itemElement);
+        }
     } else if (target.classList.contains('edit-btn') || target.closest('.edit-btn')) {
         const itemElement = target.closest('.outline-item');
         if (itemElement) {
@@ -161,15 +171,26 @@ async function handleOutlineInput(event) {
     if (target.tagName === 'INPUT') {
         const itemElement = target.closest('.outline-item');
         if (itemElement) {
+            const itemId = itemElement.dataset.id;
+            const item = currentOutlineItems.find(i => i.id === itemId);
+            
+            // Show confirm button if text has changed
+            const confirmBtn = itemElement.querySelector('.confirm-edit-btn');
+            if (confirmBtn && item && target.value.trim() !== item.text) {
+                confirmBtn.classList.remove('hidden');
+            } else if (confirmBtn) {
+                confirmBtn.classList.add('hidden');
+            }
+            
             // Clear existing timeout
             if (inputTimeout) {
                 clearTimeout(inputTimeout);
             }
             
-            // Set new timeout for debounced update
-            inputTimeout = setTimeout(async () => {
-                await updateOutlineItem(itemElement, target.value);
-            }, 1500); // Wait 1.5 seconds after user stops typing
+            // Set new timeout for debounced update (disabled for manual confirmation)
+            // inputTimeout = setTimeout(async () => {
+            //     await updateOutlineItem(itemElement, target.value);
+            // }, 1500);
         }
     }
 }
@@ -179,12 +200,7 @@ async function handleOutlineKeydown(event) {
         event.preventDefault();
         const itemElement = event.target.closest('.outline-item');
         if (itemElement) {
-            // Clear timeout and trigger immediate update
-            if (inputTimeout) {
-                clearTimeout(inputTimeout);
-                inputTimeout = null;
-            }
-            await updateOutlineItem(itemElement, event.target.value);
+            await confirmEdit(itemElement);
         }
     }
 }
@@ -193,18 +209,28 @@ async function handleOutlineBlur(event) {
     if (event.target.tagName === 'INPUT') {
         const itemElement = event.target.closest('.outline-item');
         if (itemElement) {
-            // Clear timeout and trigger immediate update
-            if (inputTimeout) {
-                clearTimeout(inputTimeout);
-                inputTimeout = null;
+            // Hide confirm button on blur if no changes
+            const confirmBtn = itemElement.querySelector('.confirm-edit-btn');
+            if (confirmBtn) {
+                // Optional: auto-confirm on blur
+                // await confirmEdit(itemElement);
             }
-            await updateOutlineItem(itemElement, event.target.value);
         }
     }
 }
 
 // Track items currently being updated to prevent multiple simultaneous updates
 const updatingItems = new Set();
+
+async function confirmEdit(itemElement) {
+    const input = itemElement.querySelector('input');
+    const confirmBtn = itemElement.querySelector('.confirm-edit-btn');
+    
+    if (input && confirmBtn) {
+        await updateOutlineItem(itemElement, input.value);
+        confirmBtn.classList.add('hidden');
+    }
+}
 
 async function updateOutlineItem(itemElement, newText) {
     const itemId = itemElement.dataset.id;
@@ -615,14 +641,14 @@ function applyNewCompleteOutline(outlineText) {
     }
 }
 
-function addSuggestionToOutline(suggestion) {
+async function addSuggestionToOutline(suggestion) {
     const newItem = {
         id: generateId(),
         level: suggestion.level,
         text: suggestion.title,
         original: '',
         score: 0,
-        scoreLevel: 'fair',
+        scoreLevel: 'poor',
         isModified: true
     };
     
@@ -633,6 +659,29 @@ function addSuggestionToOutline(suggestion) {
     if (editableOutline) {
         const itemElement = createOutlineItemElement(newItem);
         editableOutline.appendChild(itemElement);
+        
+        // Calculate score automatically for the new item
+        try {
+            if (currentAnalyzer && currentKeyword) {
+                showLoading('Calcolo punteggio per nuovo subheading...');
+                const scoreData = await currentAnalyzer.recalculateHeadingScore(currentKeyword, newItem.text);
+                
+                newItem.score = scoreData.score;
+                newItem.scoreLevel = scoreData.level;
+                
+                // Update the display
+                updateItemDisplay(itemElement, newItem);
+                
+                hideLoading();
+            }
+        } catch (error) {
+            hideLoading();
+            console.warn('Could not calculate score for new subheading:', error);
+        }
+        
+        // Update term usage colors
+        const currentOutlineText = getCurrentOutlineText();
+        updateTermUsageColors(currentOutlineText);
     }
     
     showSuccess(`Subheading "${suggestion.title}" aggiunto!`);
