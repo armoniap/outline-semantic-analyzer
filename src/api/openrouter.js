@@ -4,9 +4,9 @@ const INITIAL_RETRY_DELAY = 1000;
 
 // Available models for different tasks
 export const MODELS = {
-    COMPETITOR_ANALYSIS: 'meta-llama/llama-3.1-8b-instruct:free', // Free model for competitor analysis
+    COMPETITOR_ANALYSIS: 'microsoft/phi-3-medium-128k-instruct:free', // Free model for competitor analysis
     SEMANTIC_ENHANCEMENT: 'anthropic/claude-3-sonnet-20240229', // Claude Sonnet for semantic enhancement
-    CONTENT_GENERATION: 'meta-llama/llama-3.1-8b-instruct:free', // Free model for content generation
+    CONTENT_GENERATION: 'microsoft/phi-3-medium-128k-instruct:free', // Free model for content generation
     OUTLINE_OPTIMIZATION: 'anthropic/claude-3-sonnet-20240229' // Claude Sonnet for outline optimization
 };
 
