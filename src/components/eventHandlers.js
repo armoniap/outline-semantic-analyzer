@@ -5,7 +5,7 @@ import { CompetitorAnalyzer } from '../services/competitorAnalyzer.js';
 import { generateSemanticTerms, optimizeOutline } from '../api/openrouter.js';
 import { showLoading, hideLoading, showError, showSuccess } from '../utils/ui.js';
 import { renderResults } from './resultsRenderer.js';
-import { setupOutlineEditor } from './outlineEditor.js';
+import { setupOutlineEditor, setCurrentAnalyzer } from './outlineEditor.js';
 
 let currentAnalyzer = null;
 let currentCompetitorAnalyzer = null;
@@ -118,6 +118,9 @@ async function handleAnalyzeOutline() {
         
         // Setup outline editor
         setupOutlineEditor(currentAnalysisResults, currentSemanticTerms, keyword);
+        
+        // Set the analyzer for the outline editor
+        setCurrentAnalyzer(currentAnalyzer);
         
         hideLoading();
         showSuccess('Analisi completata con successo!');

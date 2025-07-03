@@ -70,7 +70,7 @@ function createOutlineItemElement(item) {
         </div>
         <div class="flex items-center space-x-3">
             <div class="text-right">
-                <div class="text-lg font-bold score-${item.scoreLevel}">
+                <div class="text-lg font-bold score-${item.scoreLevel}" style="color: ${getScoreColor(item.scoreLevel)}">
                     ${Math.round(item.score * 100)}%
                 </div>
                 <div class="text-xs text-gray-500 dark:text-gray-400">
@@ -250,13 +250,24 @@ async function updateOutlineItem(itemElement, newText) {
 }
 
 function updateItemDisplay(itemElement, item) {
-    const scoreDiv = itemElement.querySelector('.score-' + item.scoreLevel.replace(item.scoreLevel, ''));
     const scoreValue = itemElement.querySelector('.text-lg');
-    const scoreLabel = itemElement.querySelector('.text-xs');
+    const scoreLabels = itemElement.querySelectorAll('.text-xs');
+    const scoreLabel = scoreLabels[scoreLabels.length - 1]; // Get the last one (score label)
     
     if (scoreValue) {
         scoreValue.textContent = Math.round(item.score * 100) + '%';
         scoreValue.className = `text-lg font-bold score-${item.scoreLevel}`;
+        
+        // Force color application
+        const colorMap = {
+            'excellent': '#10b981',
+            'good': '#3b82f6', 
+            'fair': '#f59e0b',
+            'poor': '#ef4444'
+        };
+        if (colorMap[item.scoreLevel]) {
+            scoreValue.style.color = colorMap[item.scoreLevel];
+        }
     }
     
     if (scoreLabel) {
@@ -636,6 +647,17 @@ function getLevelLabel(level) {
     };
     
     return labels[level] || level;
+}
+
+function getScoreColor(level) {
+    const colorMap = {
+        'excellent': '#10b981',
+        'good': '#3b82f6', 
+        'fair': '#f59e0b',
+        'poor': '#ef4444'
+    };
+    
+    return colorMap[level] || '#6b7280'; // Default gray
 }
 
 async function suggestWithAI(itemElement) {

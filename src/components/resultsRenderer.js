@@ -25,6 +25,17 @@ function renderScoreCard(analysisResults) {
     // Apply color based on score level
     scoreValue.className = `text-4xl font-bold mb-2 score-${analysisResults.overallLevel}`;
     
+    // Force color application
+    const colorMap = {
+        'excellent': '#10b981',
+        'good': '#3b82f6', 
+        'fair': '#f59e0b',
+        'poor': '#ef4444'
+    };
+    if (colorMap[analysisResults.overallLevel]) {
+        scoreValue.style.color = colorMap[analysisResults.overallLevel];
+    }
+    
     // Show card with animation
     scoreCard.classList.remove('hidden');
     fadeIn(scoreCard);
@@ -131,6 +142,17 @@ function renderHeadingBreakdown(analysisResults) {
         const scoreValue = document.createElement('div');
         scoreValue.className = `text-lg font-bold score-${headingScore.level}`;
         scoreValue.textContent = Math.round(headingScore.score * 100) + '%';
+        
+        // Force color application for scores
+        const colorMap = {
+            'excellent': '#10b981',
+            'good': '#3b82f6', 
+            'fair': '#f59e0b',
+            'poor': '#ef4444'
+        };
+        if (colorMap[headingScore.level]) {
+            scoreValue.style.color = colorMap[headingScore.level];
+        }
         
         const scoreLabel = document.createElement('div');
         scoreLabel.className = 'text-xs text-gray-500 dark:text-gray-400';
