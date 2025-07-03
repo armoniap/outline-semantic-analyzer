@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="it" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Outline Semantic Analyzer</title>
+    <meta name="description" content="Analizza la coerenza semantica delle tue outline per blog e service page con AI">
+    <link rel="icon" type="image/svg+xml" href="/vite.svg">
+    <style>
+        /* Prevent flash of unstyled content */
+        body { visibility: hidden; }
+        body.loaded { visibility: visible; }
+    </style>
+</head>
+<body class="h-full bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+    <div id="app" class="min-h-full">
+        <!-- Header -->
+        <header class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+                    <div class="flex items-center">
+                        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                            📝 Outline Semantic Analyzer
+                        </h1>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button id="darkModeToggle" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                            <svg id="darkModeIcon" class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Input Section -->
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- API Configuration -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Configurazione API</h2>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="geminiApiKey" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Google Gemini API Key
+                                </label>
+                                <div class="relative">
+                                    <input type="password" id="geminiApiKey" 
+                                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                                           placeholder="Inserisci la tua API key di Google Gemini">
+                                    <button type="button" id="toggleGeminiApiKey" class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                        <svg id="geminiEyeIcon" class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="openrouterApiKey" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    OpenRouter API Key
+                                </label>
+                                <div class="relative">
+                                    <input type="password" id="openrouterApiKey" 
+                                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                                           placeholder="Inserisci la tua API key di OpenRouter">
+                                    <button type="button" id="toggleOpenrouterApiKey" class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                        <svg id="openrouterEyeIcon" class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Input Form -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Analisi Outline</h2>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="targetKeyword" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Parola Chiave Target
+                                </label>
+                                <input type="text" id="targetKeyword" 
+                                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                                       placeholder="es: marketing digitale">
+                            </div>
+                            <div>
+                                <label for="pageType" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Tipo di Pagina
+                                </label>
+                                <select id="pageType" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white">
+                                    <option value="blog">Blog Post</option>
+                                    <option value="service">Service Page</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="outlineInput" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Outline della Pagina
+                                </label>
+                                <textarea id="outlineInput" rows="10" 
+                                          class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                                          placeholder="Inserisci l'outline della tua pagina, un titolo per riga:
+H1: Titolo principale
+H2: Primo sottotitolo
+H3: Punto specifico
+H2: Secondo sottotitolo
+..."></textarea>
+                            </div>
+                            <div class="flex items-center space-x-4">
+                                <button id="analyzeBtn" 
+                                        class="flex-1 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 disabled:cursor-not-allowed">
+                                    Analizza Outline
+                                </button>
+                                <button id="competitorBtn" 
+                                        class="bg-secondary-600 hover:bg-secondary-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 disabled:cursor-not-allowed">
+                                    Analizza Competitor
+                                </button>
+                            </div>
+                            <div id="analyzeHelp" class="text-sm text-red-600 dark:text-red-400 hidden"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Section -->
+                <div class="space-y-6">
+                    <!-- Score Card -->
+                    <div id="scoreCard" class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 hidden">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Punteggio Semantico</h3>
+                        <div class="text-center">
+                            <div id="scoreValue" class="text-4xl font-bold text-primary-600 dark:text-primary-400 mb-2">--</div>
+                            <div id="scoreLabel" class="text-sm text-gray-600 dark:text-gray-400">Punteggio non calcolato</div>
+                        </div>
+                    </div>
+
+                    <!-- Suggestions -->
+                    <div id="suggestionsCard" class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 hidden">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Suggerimenti AI</h3>
+                        <div id="suggestionsContent" class="space-y-3"></div>
+                    </div>
+
+                    <!-- Semantic Terms -->
+                    <div id="semanticTermsCard" class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 hidden">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Termini Semantici</h3>
+                        <div id="semanticTermsContent" class="space-y-2"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enhanced Outline Editor -->
+            <div id="outlineEditor" class="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 hidden">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Editor Outline Migliorato</h2>
+                <div id="editableOutline" class="space-y-2"></div>
+                <div class="mt-4 flex space-x-4">
+                    <button id="addSubheadingBtn" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors">
+                        Aggiungi Sottotitolo
+                    </button>
+                    <button id="saveOutlineBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors">
+                        Salva Outline
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="bg-white dark:bg-gray-800 rounded-lg p-8 max-w-md mx-4">
+                <div class="text-center">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Elaborazione in corso...</h3>
+                    <p id="loadingMessage" class="text-gray-600 dark:text-gray-400">Analisi dell'outline in corso</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+</body>
+</html>
